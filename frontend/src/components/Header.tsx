@@ -7,7 +7,6 @@ export default function Header() {
       <Container>
         <div className="flex justify-between">
           <Image alt="Talk to Me!" src="/logo.svg" width={120} height={120} />
-          <Image alt="Hero Code" src="/hero.svg" width={60} height={60} />
         </div>
       </Container>
     </div>

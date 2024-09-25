@@ -7,6 +7,7 @@ interface IChatMessage {
   roomId: string;
   time: string;
 }
+
 export default function Chat({ roomId }: { roomId: string }) {
   const currentMsg = useRef<HTMLInputElement>(null);
   const { socket } = useContext(SocketContext);
@@ -20,11 +21,12 @@ export default function Chat({ roomId }: { roomId: string }) {
 
   function sendMessage(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const username = sessionStorage.getItem('username') || 'Anônimo';
     console.log(currentMsg.current?.value);
     if (currentMsg.current?.value && currentMsg.current?.value !== "") {
       const sendMsgToServer = {
         message: currentMsg.current.value,
-        username: "Alexia Kattah",
+        username,
         roomId,
         time: new Date().toLocaleTimeString(),
       };

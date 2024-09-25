@@ -19,6 +19,7 @@ interface ICandidate {
 interface IDataStream {
   id: string;
   stream: MediaStream;
+  username: string;
 }
 
 export default function Room({ params }: { params: { id: string } }) {
@@ -32,19 +33,23 @@ export default function Room({ params }: { params: { id: string } }) {
   );
   console.log("🚀 ~ Room ~ remoteStreams:", remoteStreams);
 
+  const username: string = sessionStorage.getItem('username') || prompt("Digite seu nome:") || 'Anônimo';
+  sessionStorage.setItem('username', username);
+
   useEffect(() => {
     socket?.on("connect", async () => {
       console.log("conectado");
       socket?.emit("subscribe", {
         roomId: params.id,
         socketId: socket.id,
+        username: username,
       });
       await initLocalCamera();
     });
 
     socket?.on("new user", (data) => {
       console.log("Novo usuario tentando se conectar", data);
-      createPeerConnection(data.socketId, false);
+      createPeerConnection(data.socketId, false, data.username);
       socket.emit("newUserStart", {
         to: data.socketId,
         sender: socket.id,
@@ -53,7 +58,7 @@ export default function Room({ params }: { params: { id: string } }) {
 
     socket?.on("newUserStart", (data) => {
       console.log("Usuario conectado na sala", data);
-      createPeerConnection(data.sender, true);
+      createPeerConnection(data.sender, true, data.username);
     });
 
     socket?.on("sdp", (data) => handleAnswer(data));
@@ -93,6 +98,7 @@ export default function Room({ params }: { params: { id: string } }) {
   const createPeerConnection = async (
     socketId: string,
     createOffer: boolean,
+    username: string,
   ) => {
     const config = {
       iceServers: [
@@ -137,6 +143,7 @@ export default function Room({ params }: { params: { id: string } }) {
       const dataStream: IDataStream = {
         id: socketId,
         stream: remoteStream,
+        username: username,
       };
 
       setRemoteStreams((prevState: IDataStream[]) => {
@@ -173,10 +180,12 @@ export default function Room({ params }: { params: { id: string } }) {
           setRemoteStreams((prevState) =>
             prevState.filter((stream) => stream.id !== socketId),
           );
+          break;
         case "failed":
           setRemoteStreams((prevState) =>
             prevState.filter((stream) => stream.id !== socketId),
           );
+          break;
         case "closed":
           setRemoteStreams((prevState) =>
             prevState.filter((stream) => stream.id !== socketId),
@@ -223,8 +232,8 @@ export default function Room({ params }: { params: { id: string } }) {
   return (
     <div className='h-screen'>
       <Header />
-      <div className='flex h-[75%] '>
-        <div className='md:w-[70%] w-full m-3'>
+      <div className='flex h-full- w-full'>
+        <div className='md:w-[45%] w-full m-3'>
           <div className='grid md:grid-cols-2 grid-cols-1 gap-3'>
             <div className='bg-gray-950 w-full rounded-md h-full p-2 relative'>
               <video
@@ -232,7 +241,7 @@ export default function Room({ params }: { params: { id: string } }) {
                 autoPlay
                 ref={localStream}
               ></video>
-              <span className='absolute bottom-3'>Alexia Kattah</span>
+              <span className='absolute bottom-3'>{username}</span>
             </div>
             {remoteStreams.map((stream, index) => {
               return (
@@ -248,7 +257,7 @@ export default function Room({ params }: { params: { id: string } }) {
                         video.srcObject = stream.stream;
                     }}
                   />
-                  <span className='absolute bottom-3'>Alexia Kattah</span>
+                  <span className='absolute bottom-3'>{stream.username}</span>
                 </div>
               );
             })}
