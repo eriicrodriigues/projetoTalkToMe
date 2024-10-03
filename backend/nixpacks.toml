@@ -1,0 +1,6 @@
+# nixpacks.toml
+[build]
+command = "npm run build"
+
+[start]
+command = "npm start"
